@@ -1,0 +1,132 @@
+* {
+    font-family: sans-serif;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+    transition: all .3s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: black;
+}
+
+.input-content {
+    align-self: end;
+    width: 80%;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.send {
+    background-color: black;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+input {
+    width: 80%;
+    padding: 5px 10px;
+    border: 1px black solid;
+    outline: none;
+}
+
+.top {
+    background-color: white;
+    width: 100%;
+    height: 80%;
+    display: flex;
+    border: solid 2px black;
+    padding: 10px;
+}
+
+.left, .right {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.left {
+    width: 30%;
+}
+
+.right {
+    width: 70%;
+    background-color: rgb(131, 172, 221);
+    border-left: 1px black solid;
+}
+
+main {
+    width: 80%;
+    height: 90%;
+}
+
+#exit {
+    padding: 5px 10px;
+    background-color: white;
+    border-radius: 30px;
+    border: none;
+    cursor: pointer;
+}
+
+#exit, .top, .right, .left,
+.send, input {
+    border-radius: 30px;
+}
+
+.bottom {
+    margin-top: 5vh;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+}
+
+.users-list {
+    width: 100%;
+    list-style: none;
+}
+
+.user-item {
+    background: #f5f9ffa2;;
+    border-radius: 5px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 5px;
+    border: 1px rgba(0, 0, 0, 0.021) solid;
+}
+
+.user-item.active {
+    background: #c8dcff;
+    border: 1px black solid;
+}
+
+.user-item:hover {
+    background: #c8dcff;
+}
+
+.user-item[data-username="${localStorage.username}"] {
+    color: #3498db;
+    font-weight: bold;
+}
+
+.title {
+   position: absolute;
+   margin-top: -30vh;
+   width: 40vw;
+   color: #07466f;
+   padding-bottom: 10px;
+   border-bottom: 2px solid #07456f3b ;
+}

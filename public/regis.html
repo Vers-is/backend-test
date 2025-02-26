@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чатик</title>
+    <link rel="stylesheet" href="./regis.css">
+    <script src="./app.js" defer></script>
+</head>
+<body>
+
+    <div class="login-modal">
+        <div class="login-modal-content">
+            <div class="title">Регистрация</div>
+            <div class="login-modal-element">
+                <label for="username">Имя</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="login-modal-element">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>  
+            </div>
+            
+            <button id="create">Создать</button>
+            <div id="error-message" style="color:white; font-size: 12px;"></div>
+        </div>
+    </div>
+    
+</body>
+</html>

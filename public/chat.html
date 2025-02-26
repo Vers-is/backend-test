@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чатик</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./app.js" defer></script>
+</head>
+<body>
+    <main>
+        <div class="top">
+            <div class="left">
+                <ul id="user-list" class="users-list">
+            </div>
+
+            <div class="right">
+                <div class="messages"></div>
+                <div class="input-content">
+                    <input type="text" class="enter-message"> <!-- добавить ограничение или чтобы окно сообщения расширялось-->
+                    <button class="send">Отправить</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom">
+            <div id="current-username" style="color: white; font-size: 24px;"></div>
+            <button id="exit" class="exit-button">Выход</button>
+        </div>
+
+    </main>
+    
+</body>
+</html>

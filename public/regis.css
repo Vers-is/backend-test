@@ -1,0 +1,60 @@
+* {
+    font-family: sans-serif;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+    transition: all .3s ease;
+    box-sizing: border-box;
+}
+
+.login-modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+.login-modal-content {
+    border-radius: 30px;
+    gap: 2vh;
+    border: solid 2px black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 10vh 10vw;
+}
+
+.login-modal-element {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2vw;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+#login-button, #create {
+    margin-top: 20px;
+    width: 100%;
+    background-color: black;
+    border: none;
+    border-radius: 30px;
+    color: white;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+input {
+    border-radius: 30px;
+    padding: 5px 10px;
+    border: 1px black solid;
+    outline: none;
+}
+
