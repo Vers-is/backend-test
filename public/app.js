@@ -1,227 +1,237 @@
-document.querySelector('.send').addEventListener('click', async () => {
-    const messageInput = document.querySelector('.enter-message');
-    const messageContent = messageInput.value.trim();
-    const recipient = document.querySelector('.messages h2').textContent.split(' ')[2]; 
-
-    if (!messageContent || !recipient) {
-        return; 
+document.addEventListener('DOMContentLoaded', () => {
+    const sendButton = document.querySelector('.send');
+    if (!sendButton) {
+        console.error("Элемент с классом '.send' не найден");
+        return;
     }
+    
+    sendButton.addEventListener('click', async () => {
+        const messageInput = document.querySelector('.enter-message');
+        const messageContent = messageInput.value.trim();
+        const recipientElement = document.querySelector('.chat-header h2');
+        
+        if (!recipientElement) {
+            alert('Выберите собеседника из списка!');
+            return;
+        }
+        
+        const recipient = recipientElement.textContent.match(/Чат с (.+)/)?.[1];
+        const sender = localStorage.getItem("username");
+        
+        if (!messageContent || !recipient) {
+            alert('Введите сообщение и выберите получателя!');
+            return;
+        }
+        
+        if (!sender) {
+            alert('Требуется авторизация!');
+            window.location.href = 'index.html';
+            return;
+        }
 
+        try {
+            const response = await fetch('http://127.0.0.1:3002/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sender, recipient, content: messageContent })
+            });
+
+            if (response.ok) {
+                messageInput.value = '';
+                loadMessages(recipient);
+            } else {
+                const error = await response.json();
+                console.error('Ошибка сервера:', error);
+                alert(`Ошибка: ${error.error || 'Неизвестная ошибка'}`);
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+            alert('Нет соединения с сервером');
+        }
+    });
+});
+
+async function loadMessages(username) {
+    if (!username) return;
+    
     try {
-        const response = await fetch('http://127.0.0.1:3002/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sender: localStorage.getItem("username"), recipient, content: messageContent })
-        });
+        const sender = localStorage.getItem("username"); 
+        // Приводим имена к нижнему регистру, чтобы соответствовать данным в БД
+        const lowerSender = sender.toLowerCase();
+        const lowerUsername = username.toLowerCase();
+        
+        const encodedUsername = encodeURIComponent(lowerUsername);
+        const encodedSender = encodeURIComponent(lowerSender);
+        const response = await fetch(`http://127.0.0.1:3002/messages?currentUser=${encodedSender}&with=${encodedUsername}`);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || `HTTP error! status: ${response.status}`);
+        }
+    
+        const messages = await response.json();
 
-        if (response.ok) {
-            messageInput.value = ''; 
-            loadMessages(recipient); 
-        } else {
-            console.error('Ошибка отправки сообщения:', response.statusText);
+        const headerElement = document.querySelector('.chat-header');
+        const messagesListElement = document.querySelector('.messages-list');
+        
+        if(headerElement) {
+            headerElement.innerHTML = `<h2>Чат с ${username}</h2>`;
+        }
+        
+        if(messagesListElement) {
+            messagesListElement.innerHTML = '';
+        }
+        
+        messages.forEach(msg => {
+            const messageClass = msg.sender === lowerSender ? 'sent' : 'received';
+            const messageHTML = `
+                <div class="message ${messageClass}">
+                    <div class="message-header">
+                        <div class="message-sender">${msg.sender}</div>
+                        <div class="message-content">${msg.content}</div>
+                    </div>
+                    <span class="time">${new Date(msg.created_at).toLocaleString()}</span>
+                </div>
+            `;
+            if(messagesListElement) {
+                messagesListElement.insertAdjacentHTML('beforeend', messageHTML);
+            }
+        });
+        
+        if(messagesListElement) {
+            messagesListElement.scrollTop = messagesListElement.scrollHeight;
         }
     } catch (error) {
-        console.error('Ошибка:', error);
+        console.error('Ошибка загрузки:', error);
+        alert(error.message);
     }
-});
+}
 
 
 function updateCurrentUsername() {
     const currentUsernameElement = document.getElementById('current-username');
-    if (!currentUsernameElement) {
-        console.error("Элемент с id 'current-username' не найден");
-        return;
-    }
-
-    const username = localStorage.getItem("username");
-    if (username) {
-        currentUsernameElement.textContent = `${username}`;
-    } else {
-        currentUsernameElement.textContent = "Гость";
-    }
+    if (!currentUsernameElement) return;
+    
+    const username = localStorage.getItem("username") || "Гость";
+    currentUsernameElement.textContent = username;
 }
-
-async function loadMessages(username) {
-    try {
-        const response = await fetch(`http://127.0.0.1:3002/messages?with=${username}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const messages = await response.json();
-        const messagesDiv = document.querySelector('.messages');
-
-        messagesDiv.innerHTML += messages.map(msg => `
-            <div class="message">
-                <strong>${msg.sender}</strong>: ${msg.content}
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Ошибка загрузки сообщений:', error);
-    }
-}
-
 
 async function loadUserList() {
     try {
         const response = await fetch('http://127.0.0.1:3002/users');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Ошибка: ${response.status}`);
         
         const users = await response.json();
         const userList = document.getElementById('user-list');
-        userList.innerHTML = users
-            .map(user => `
-                <li class="user-item" data-username="${user}">
-                    ${user} 
-                    ${user === localStorage.getItem('username') ? '(Вы)' : ''}
-                </li>
-            `)
-            .join('');
+        userList.innerHTML = users.map(user => `
+            <li class="user-item" data-username="${user}">
+                ${user} ${user === localStorage.getItem('username') ? '(Вы)' : ''}
+            </li>
+        `).join('');
 
         document.querySelectorAll('.user-item').forEach(item => {
             item.addEventListener('click', () => {
-                const selectedUser = item.getAttribute('data-username');
-                openChatWithUser(selectedUser);
+                document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                openChatWithUser(item.dataset.username);
             });
         });
     } catch (error) {
-        console.error('Ошибка загрузки пользователей:', error);
+        console.error('Ошибка загрузки:', error);
+        alert(error.message);
     }
 }
 
 function openChatWithUser(username) {
-    const messagesDiv = document.querySelector('.messages');
-    messagesDiv.innerHTML = `<h2 class="title">Чат с ${username}</h2>`; 
-
+    if (!username) return;
+    // Можно сразу обновить заголовок, но это уже делается в loadMessages
     loadMessages(username);
-    const userItems = document.querySelectorAll('.user-item');
-    userItems.forEach(item => item.classList.remove('active'));
-
-    // Add 'active' class to the selected user item
-    const selectedUserItem = document.querySelector(`.user-item[data-username="${username}"]`);
-    if (selectedUserItem) {
-        selectedUserItem.classList.add('active');
-    }
 }
-
 
 
 document.addEventListener('DOMContentLoaded', () => {
     updateCurrentUsername();
     loadUserList();
-
-    const createBtn = document.getElementById('create');
+    
     const errorMessage = document.getElementById('error-message');
+    
+    document.getElementById('create')?.addEventListener('click', async () => {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
 
-    if (createBtn) {
-        createBtn.addEventListener('click', async () => {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+        if (!username || !password) {
+            errorMessage.textContent = 'Заполните все поля!';
+            errorMessage.style.color = "red";
+            return;
+        }
 
-            if (!username || !password) {
-                errorMessage.textContent = 'Заполните все поля!';
-                errorMessage.style.color = "red";
-                return;
-            }
+        try {
+            const response = await fetch('http://127.0.0.1:3002/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const data = await response.json();
 
-            try {
-                const response = await fetch('http://127.0.0.1:3002/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const text = await response.text();
-                const responseData = text ? JSON.parse(text) : {};
-
-                if (response.ok) {
-                    localStorage.setItem("username", username); 
-                    alert('Пользователь зарегистрирован!');
-                    window.location.href = "chat.html";
-                } else if (response.status === 409) {
-                    errorMessage.textContent = 'Пользователь уже существует!';
-                    errorMessage.style.color = "red";
-                } else {
-                    errorMessage.textContent = responseData.error || 'Ошибка сервера';
-                    errorMessage.style.color = "red";
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                errorMessage.textContent = 'Нет соединения с сервером';
+            if (response.ok) {
+                localStorage.setItem("username", username);
+                alert('Регистрация успешна!');
+                window.location.href = "chat.html";
+            } else {
+                errorMessage.textContent = data.error || 'Ошибка сервера';
                 errorMessage.style.color = "red";
             }
-        });
-    }
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            errorMessage.textContent = 'Нет соединения с сервером';
+            errorMessage.style.color = "red";
+        }
+    });
+    
+    document.getElementById("login-button")?.addEventListener("click", async () => {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
 
-    const loginButton = document.getElementById("login-button");
+        if (!username || !password) {
+            errorMessage.textContent = 'Заполните все поля!';
+            errorMessage.style.color = "red";
+            return;
+        }
 
-    if (loginButton) {
-        loginButton.addEventListener("click", async () => {
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
+        try {
+            const response = await fetch('http://127.0.0.1:3002/login', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
 
-            if (!username || !password) {
-                errorMessage.textContent = 'Заполните все поля!';
-                errorMessage.style.color = "red";
-                return;
-            }
-
-            try {
-                const response = await fetch('http://127.0.0.1:3002/login', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    localStorage.setItem("username", username); 
-                    alert('Вход успешен!');
-                    window.location.href = "chat.html";
-                } else {
-                    errorMessage.textContent = data.error || 'Ошибка при входе';
-                    errorMessage.style.color = "red";
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                errorMessage.textContent = 'Нет соединения с сервером';
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem("username", username);
+                alert('Вход успешен!');
+                window.location.href = "chat.html";
+            } else {
+                errorMessage.textContent = data.error || 'Ошибка входа';
                 errorMessage.style.color = "red";
             }
-        });
-    } else {
-        console.error("Кнопка входа не найдена");
-    }
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            errorMessage.textContent = 'Нет соединения с сервером';
+            errorMessage.style.color = "red";
+        }
+    });
+    
+    document.querySelector(".exit-button")?.addEventListener("click", async () => {
+        localStorage.clear();
+        sessionStorage.clear();
 
-    const exitButton = document.querySelector(".exit-button");
-    if (exitButton) {
-        exitButton.addEventListener("click", async () => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("username");
-
-            sessionStorage.removeItem("token");
-            sessionStorage.removeItem("username");
-
-            try {
-                const response = await fetch('http://127.0.0.1:3002/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    console.log("Пользователь вышел");
-                }
-            } catch (error) {
-                console.error("Ошибка при выходе:", error);
-            }
-
-            window.location.href = "index.html";
-        });
-    }
+        try {
+            await fetch('http://127.0.0.1:3002/logout', { method: 'POST', credentials: 'include' });
+        } catch (error) {
+            console.error("Ошибка при выходе:", error);
+        }
+        
+        window.location.href = "index.html";
+    });
 });
-
-
- 

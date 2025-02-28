@@ -92,33 +92,70 @@ app.get('/users', async (req, res) => {
 });
 
 
-// Fetch messages between two users
-app.get('/messages', async (req, res) => {
-    const { with: recipient } = req.query;
-    const username = req.session.username; // Adjust based on how you manage sessions
-
+// Роут для получения сообщений
+app.post('/messages', async (req, res) => {
     try {
-        const result = await pool.query(
-            "SELECT * FROM messages WHERE (sender = $1 AND recipient = $2) OR (sender = $2 AND recipient = $1) ORDER BY created_at",
-            [username, recipient]
+        const { sender, recipient, content } = req.body;
+        
+        if (!sender || !recipient || !content) {
+            return res.status(400).json({ error: "Все поля обязательны" });
+        }
+
+        // Проверка существования пользователей
+        const usersExist = await pool.query(
+            `SELECT COUNT(*) = 2 as valid 
+             FROM users 
+             WHERE username IN ($1, $2)`,
+            [sender, recipient]
         );
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка при получении сообщений:', error);
-        res.status(500).json({ error: "Ошибка сервера" });
+
+        if (!usersExist.rows[0].valid) {
+            return res.status(404).json({ error: "Пользователь не найден" });
+        }
+
+        // Сохранение сообщения
+        const result = await pool.query(
+            `INSERT INTO messages (sender_id, recipient_id, content)
+             VALUES (
+                 (SELECT id FROM users WHERE username = $1),
+                 (SELECT id FROM users WHERE username = $2),
+                 $3
+             ) RETURNING *`,
+            [sender, recipient, content]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
-// Send a message
-app.post('/messages', async (req, res) => {
-    const { sender, recipient, content } = req.body;
-
+// Получение сообщений
+app.get('/messages', async (req, res) => {
     try {
-        await pool.query("INSERT INTO messages (sender, recipient, content, created_at) VALUES ($1, $2, $3, NOW())", [sender, recipient, content]);
-        res.status(201).json({ message: "Сообщение отправлено" });
-    } catch (error) {
-        console.error('Ошибка при отправке сообщения:', error);
-        res.status(500).json({ error: "Ошибка сервера" });
+        const currentUser = req.query.currentUser;
+        const withUser = req.query.with;
+
+        if (!currentUser || !withUser) {
+            return res.status(400).json({ error: "Не указаны пользователи" });
+        }
+
+        const messages = await pool.query(`
+            SELECT m.*, u1.username as sender, u2.username as recipient
+            FROM messages m
+            JOIN users u1 ON m.sender_id = u1.id
+            JOIN users u2 ON m.recipient_id = u2.id
+            WHERE (u1.username = $1 AND u2.username = $2)
+               OR (u1.username = $2 AND u2.username = $1)
+            ORDER BY m.created_at`,
+            [currentUser, withUser]
+        );
+
+        res.json(messages.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
