@@ -1,12 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.querySelector('.send');
-    if (!sendButton) {
-        console.error("Элемент с классом '.send' не найден");
-        return;
-    }
-    
+    const messageInput = document.querySelector('.enter-message');
+
+    messageInput.addEventListener('keypress', async (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            await sendMessage();
+        }
+    });
+
     sendButton.addEventListener('click', async () => {
-        const messageInput = document.querySelector('.enter-message');
+        await sendMessage();
+    });
+
+    async function sendMessage() {
         const messageContent = messageInput.value.trim();
         const recipientElement = document.querySelector('.chat-header h2');
         
@@ -48,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Ошибка сети:', error);
             alert('Нет соединения с сервером');
         }
-    });
+    }
 });
 
 async function loadMessages(username) {
@@ -56,7 +63,6 @@ async function loadMessages(username) {
     
     try {
         const sender = localStorage.getItem("username"); 
-        // Приводим имена к нижнему регистру, чтобы соответствовать данным в БД
         const lowerSender = sender.toLowerCase();
         const lowerUsername = username.toLowerCase();
         
@@ -144,7 +150,6 @@ async function loadUserList() {
 
 function openChatWithUser(username) {
     if (!username) return;
-    // Можно сразу обновить заголовок, но это уже делается в loadMessages
     loadMessages(username);
 }
 

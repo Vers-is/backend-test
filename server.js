@@ -80,7 +80,6 @@ app.post('/logout', (req, res) => {
     });
 });
 
-// Добавьте этот код после других роутов, но перед app.listen()
 app.get('/users', async (req, res) => {
     try {
         const result = await pool.query("SELECT username FROM users");
@@ -92,7 +91,6 @@ app.get('/users', async (req, res) => {
 });
 
 
-// Роут для получения сообщений
 app.post('/messages', async (req, res) => {
     try {
         const { sender, recipient, content } = req.body;
@@ -101,7 +99,6 @@ app.post('/messages', async (req, res) => {
             return res.status(400).json({ error: "Все поля обязательны" });
         }
 
-        // Проверка существования пользователей
         const usersExist = await pool.query(
             `SELECT COUNT(*) = 2 as valid 
              FROM users 
@@ -113,7 +110,6 @@ app.post('/messages', async (req, res) => {
             return res.status(404).json({ error: "Пользователь не найден" });
         }
 
-        // Сохранение сообщения
         const result = await pool.query(
             `INSERT INTO messages (sender_id, recipient_id, content)
              VALUES (
@@ -131,7 +127,6 @@ app.post('/messages', async (req, res) => {
     }
 });
 
-// Получение сообщений
 app.get('/messages', async (req, res) => {
     try {
         const currentUser = req.query.currentUser;
