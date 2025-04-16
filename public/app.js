@@ -1,17 +1,37 @@
+// function openChatWithUser(username) {
+//     if (!username) return;
+//     const inputContent = document.querySelector(".input-content");
+//     if (inputContent) {
+//         inputContent.style.display = 'flex'; 
+//     }
+//     loadMessages(username);
+// }
+
 document.addEventListener('DOMContentLoaded', () => {
+    updateCurrentUsername();
+    loadUserList();
+
     const sendButton = document.querySelector('.send');
     const messageInput = document.querySelector('.enter-message');
 
-    messageInput.addEventListener('keypress', async (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            await sendMessage();
-        }
-    });
+    if (messageInput) {
+        messageInput.addEventListener('keypress', async (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                await sendMessage();
+            }
+        });
+    } else {
+        console.error("Элемент '.enter-message' не найден");
+    }
 
-    sendButton.addEventListener('click', async () => {
-        await sendMessage();
-    });
+    if (sendButton) {
+        sendButton.addEventListener('click', async () => {
+            await sendMessage();
+        });
+    } else {
+        console.error("Элемент '.send' не найден");
+    }
 
     async function sendMessage() {
         const messageContent = messageInput.value.trim();
@@ -62,7 +82,7 @@ async function loadMessages(username) {
     if (!username) return;
     
     try {
-        const sender = localStorage.getItem("username"); 
+        const sender = localStorage.getItem("username");
         const lowerSender = sender.toLowerCase();
         const lowerUsername = username.toLowerCase();
         
@@ -80,12 +100,16 @@ async function loadMessages(username) {
         const headerElement = document.querySelector('.chat-header');
         const messagesListElement = document.querySelector('.messages-list');
         
-        if(headerElement) {
-            headerElement.innerHTML = `<h2>Чат с ${username}</h2>`;
+        if (headerElement) {
+            headerElement.innerHTML = `<h2> ${username}</h2>`;
+        } else {
+            console.error("Элемент '.chat-header' не найден");
         }
         
-        if(messagesListElement) {
+        if (messagesListElement) {
             messagesListElement.innerHTML = '';
+        } else {
+            console.error("Элемент '.messages-list' не найден");
         }
         
         messages.forEach(msg => {
@@ -99,12 +123,12 @@ async function loadMessages(username) {
                     <span class="time">${new Date(msg.created_at).toLocaleString()}</span>
                 </div>
             `;
-            if(messagesListElement) {
+            if (messagesListElement) {
                 messagesListElement.insertAdjacentHTML('beforeend', messageHTML);
             }
         });
         
-        if(messagesListElement) {
+        if (messagesListElement) {
             messagesListElement.scrollTop = messagesListElement.scrollHeight;
         }
     } catch (error) {
@@ -113,10 +137,12 @@ async function loadMessages(username) {
     }
 }
 
-
 function updateCurrentUsername() {
     const currentUsernameElement = document.getElementById('current-username');
-    if (!currentUsernameElement) return;
+    if (!currentUsernameElement) {
+        console.error("Элемент '#current-username' не найден");
+        return;
+    }
     
     const username = localStorage.getItem("username") || "Гость";
     currentUsernameElement.textContent = username;
@@ -129,11 +155,15 @@ async function loadUserList() {
         
         const users = await response.json();
         const userList = document.getElementById('user-list');
-        userList.innerHTML = users.map(user => `
-            <li class="user-item" data-username="${user}">
-                ${user} ${user === localStorage.getItem('username') ? '(Вы)' : ''}
-            </li>
-        `).join('');
+        if (userList) {
+            userList.innerHTML = users.map(user => `
+                <li class="user-item" data-username="${user}">
+                    ${user} ${user === localStorage.getItem('username') ? '(Вы)' : ''}
+                </li>
+            `).join('');
+        } else {
+            console.error("Элемент '#user-list' не найден");
+        }
 
         document.querySelectorAll('.user-item').forEach(item => {
             item.addEventListener('click', () => {
@@ -143,30 +173,35 @@ async function loadUserList() {
             });
         });
     } catch (error) {
-        console.error('Ошибка загрузки:', error);
+        console.error('Ошибка загрузки списка пользователей:', error);
         alert(error.message);
     }
 }
 
 function openChatWithUser(username) {
     if (!username) return;
+    const inputContent = document.querySelector(".input-content");
+    if (inputContent) {
+        inputContent.style.display = 'flex'; 
+    }
     loadMessages(username);
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
-    updateCurrentUsername();
-    loadUserList();
-    
     const errorMessage = document.getElementById('error-message');
-    
-    document.getElementById('create')?.addEventListener('click', async () => {
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
+
+    const createButton = document.getElementById('create');
+    createButton?.addEventListener('click', async () => {
+        const username = document.getElementById('username')?.value.trim();
+        const password = document.getElementById('password')?.value.trim();
 
         if (!username || !password) {
-            errorMessage.textContent = 'Заполните все поля!';
-            errorMessage.style.color = "red";
+            if (errorMessage) {
+                errorMessage.textContent = 'Заполните все поля!';
+                errorMessage.style.color = "red";
+            } else {
+                alert('Заполните все поля!');
+            }
             return;
         }
 
@@ -184,23 +219,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Регистрация успешна!');
                 window.location.href = "chat.html";
             } else {
-                errorMessage.textContent = data.error || 'Ошибка сервера';
-                errorMessage.style.color = "red";
+                if (errorMessage) {
+                    errorMessage.textContent = data.error || 'Ошибка сервера';
+                    errorMessage.style.color = "red";
+                } else {
+                    alert(data.error || 'Ошибка сервера');
+                }
             }
         } catch (error) {
             console.error('Ошибка регистрации:', error);
-            errorMessage.textContent = 'Нет соединения с сервером';
-            errorMessage.style.color = "red";
+            if (errorMessage) {
+                errorMessage.textContent = 'Нет соединения с сервером';
+                errorMessage.style.color = "red";
+            } else {
+                alert('Нет соединения с сервером');
+            }
         }
     });
-    
-    document.getElementById("login-button")?.addEventListener("click", async () => {
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
+
+    const loginButton = document.getElementById("login-button");
+    loginButton?.addEventListener("click", async () => {
+        const username = document.getElementById("username")?.value.trim();
+        const password = document.getElementById("password")?.value.trim();
 
         if (!username || !password) {
-            errorMessage.textContent = 'Заполните все поля!';
-            errorMessage.style.color = "red";
+            if (errorMessage) {
+                errorMessage.textContent = 'Заполните все поля!';
+                errorMessage.style.color = "red";
+            } else {
+                alert('Заполните все поля!');
+            }
             return;
         }
 
@@ -217,17 +265,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Вход успешен!');
                 window.location.href = "chat.html";
             } else {
-                errorMessage.textContent = data.error || 'Ошибка входа';
-                errorMessage.style.color = "red";
+                if (errorMessage) {
+                    errorMessage.textContent = data.error || 'Ошибка входа';
+                    errorMessage.style.color = "red";
+                } else {
+                    alert(data.error || 'Ошибка входа');
+                }
             }
         } catch (error) {
             console.error('Ошибка входа:', error);
-            errorMessage.textContent = 'Нет соединения с сервером';
-            errorMessage.style.color = "red";
+            if (errorMessage) {
+                errorMessage.textContent = 'Нет соединения с сервером';
+                errorMessage.style.color = "red";
+            } else {
+                alert('Нет соединения с сервером');
+            }
         }
     });
     
-    document.querySelector(".exit-button")?.addEventListener("click", async () => {
+    const exitButton = document.querySelector(".exit-button");
+    exitButton?.addEventListener("click", async () => {
         localStorage.clear();
         sessionStorage.clear();
 
